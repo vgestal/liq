@@ -94,9 +94,13 @@ details summary{cursor:pointer;color:#9fb0c8}
 #alarmbar.short{background:#a32a2a;animation:fl .9s infinite alternate}
 @keyframes fl{from{filter:brightness(1)}to{filter:brightness(1.5)}}
 #alarmbar button{background:#fff;color:#111;border:0;font-weight:700;padding:6px 14px}
-.sh{display:grid;grid-template-columns:44px 16px 1fr 62px;gap:4px;padding:2px 0;border-bottom:1px solid #161d2b;font-size:12px;font-variant-numeric:tabular-nums;align-items:center}
+.sh{display:grid;grid-template-columns:78px 16px 1fr 62px;gap:4px;padding:2px 0;border-bottom:1px solid #161d2b;font-size:12px;font-variant-numeric:tabular-nums;align-items:center}
 .sh .tm{color:var(--mut)}
 .st-open{color:#9fb0c8}.st-tp{color:var(--up)}.st-sl{color:var(--dn)}.st-exp{color:var(--mut)}
+.stt{display:grid;grid-template-columns:68px 30px 56px 44px 42px 1fr;white-space:nowrap;gap:4px;padding:3px 0;border-bottom:1px solid #161d2b;font-variant-numeric:tabular-nums;text-align:right;align-items:center}
+.stt>span:first-child{text-align:left;font-weight:600}
+.stt.hd{color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+.stt b{font-weight:700}
 #alcfg summary{cursor:pointer;color:#9fb0c8}
 @media(max-width:1000px){main{flex-direction:column}aside{width:100%}.cwrap{height:70vh}}
 </style>
@@ -182,7 +186,10 @@ details summary{cursor:pointer;color:#9fb0c8}
         <div class="small" id="al_stat"></div>
         <div class="small" style="margin-top:6px">La página tiene que seguir abierta para vigilar el flujo. En portátil puede quedar en segundo plano. En iPhone/iPad debe estar en primer plano con la pantalla encendida (activa «Mantener pantalla encendida»); el interruptor de silencio del iPhone puede mutear el sonido. Para recibir el aviso en el móvil aunque esté bloqueado, deja la página abierta en el portátil, instala la app ntfy en el móvil y escribe aquí el mismo tema: el texto de la señal (activo, precios, TP y SL) se envía al servicio público ntfy.sh, así que usa un tema largo y secreto.</div>
       </details>
-      <div class="small" id="sstats" style="margin-top:8px"></div>
+      <div style="margin-top:10px">
+        <div class="h"><span>Estadísticas de señales</span><span><select id="statscope"><option value="all">Todos los activos</option><option value="asset">Solo este activo</option></select> <button id="statreset" title="Borrar historial y estadísticas">Reiniciar</button></span></div>
+        <div id="sstats"></div>
+      </div>
       <div id="shist"></div>
       <div class="small" style="margin-top:6px">Heurística de flujo de órdenes, sin backtest: usa el acierto de la sesión como referencia. Herramienta de apoyo, no consejo financiero. TP/SL en puntos de BTC (1 pt = 1 $ en BTC); en otros activos se escalan por el mismo porcentaje.</div>
     </div>
@@ -1072,7 +1079,7 @@ function drawCVD(){
 }
 /* ---------- señales de entrada por flujo de órdenes + alarma ---------- */
 var CFG_KEY='lhm_cfg_v1',TITLE0=document.title;
-var CFG={tpMode:'auto',tpPts:1000,rr:1.5,sens:'mid',dir:'both',cd:5,on:false,snd:true,vol:0.6,tone:'bell',voice:false,notif:true,vib:true,rep:'3',wake:false,bg:false,ntfy:''};
+var CFG={tpMode:'auto',tpPts:1000,rr:1.5,sens:'mid',dir:'both',cd:5,on:false,snd:true,vol:0.6,tone:'bell',voice:false,notif:true,vib:true,rep:'3',wake:false,bg:false,ntfy:'',statScope:'all'};
 var SENS={low:60,mid:45,high:32},WARM_MS=120000,WARM_N=40,PERSIST_MS=8000;
 var NAMES={BTC:'Bitcoin',ETH:'Ethereum',SOL:'Solana',HYPE:'Hyperliquid',HBAR:'Hedera',TAO:'Tao',LINK:'Link',SUI:'Sui',NEAR:'Near',AAVE:'Aave',INJ:'Injective'};
 var STAT={open:'abierta',tp:'TP alcanzado',sl:'SL alcanzado',exp:'caducada'};
@@ -1159,18 +1166,18 @@ function trackSignals(){
   S.pxHi=0;S.pxLo=1e99;
   S.sigs.forEach(function(g){
     if(g.status!=='open'||g.a!==S.asset)return;
-    if(now-g.t>6*3600000){g.status='exp';return;}
+    if(now-g.t>6*3600000){g.status='exp';sigsSave();return;}
     if(hi<=0)return;
     /* si en el mismo intervalo se tocan TP y SL se asume el SL primero (criterio prudente) */
     if(g.dir>0){if(lo<=g.sl){g.status='sl';g.tc=now;}else if(hi>=g.tp){g.status='tp';g.tc=now;}}
     else{if(hi>=g.sl){g.status='sl';g.tc=now;}else if(lo<=g.tp){g.status='tp';g.tc=now;}}
-    if(g.status!=='open')S.flowDirty=true;
+    if(g.status!=='open'){S.flowDirty=true;sigsSave();}
   });
 }
 function fireSignal(dir,m){
   var pl=mkPlan(dir,m.last);
   var g={id:++S.sigId,t:Date.now(),a:S.asset,dir:dir,entry:pl.entry,tp:pl.tp,sl:pl.sl,tpPts:pl.tpPts,slPts:pl.slPts,rr:pl.rr,atr:pl.atr,score:m.score,status:'open'};
-  S.sigs.unshift(g);if(S.sigs.length>40)S.sigs.pop();
+  S.sigs.unshift(g);if(S.sigs.length>500)S.sigs.pop();sigsSave();
   S.lastSigAt=g.t;S.sigCand={dir:0,since:0};
   S.flowDirty=true;requestRender();
   deliver(g,false);
@@ -1303,7 +1310,7 @@ function testPush(){
   pushNtfy(g,sigText(g),function(m){$('al_msg').textContent=m;});
 }
 var BIND=[['tpmode','tpMode','s'],['tpval','tpPts','n'],['rrsel','rr','n'],['sens','sens','s'],['dirsel','dir','s'],['cdsel','cd','n'],
-  ['al_on','on','b'],['al_snd','snd','b'],['al_vol','vol','n'],['al_tone','tone','s'],['al_rep','rep','s'],['al_voice','voice','b'],['al_notif','notif','b'],['al_vib','vib','b'],['al_wake','wake','b'],['al_bg','bg','b'],['al_ntfy','ntfy','s']];
+  ['al_on','on','b'],['al_snd','snd','b'],['al_vol','vol','n'],['al_tone','tone','s'],['al_rep','rep','s'],['al_voice','voice','b'],['al_notif','notif','b'],['al_vib','vib','b'],['al_wake','wake','b'],['al_bg','bg','b'],['al_ntfy','ntfy','s'],['statscope','statScope','s']];
 function syncAlUI(){
   BIND.forEach(function(b){var el=$(b[0]);if(!el)return;if(b[2]==='b')el.checked=!!CFG[b[1]];else el.value=CFG[b[1]];});
   $('tpvalout').textContent=CFG.tpPts;$('tpval').disabled=(CFG.tpMode==='auto');
@@ -1327,6 +1334,10 @@ function bindAl(){
   $('al_ts').onclick=function(){testAlarm(-1);};
   $('al_tn').onclick=testPush;
   $('alarmstop').onclick=stopRing;
+  $('statreset').onclick=function(){
+    if(!confirm('¿Borrar el historial de señales y las estadísticas guardadas en este navegador?'))return;
+    S.sigs=[];sigsSave();S.flowDirty=true;requestRender();
+  };
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&CFG.on&&CFG.wake&&!AU.wl)wakeOn();});
 }
 function planHTML(g){
@@ -1374,14 +1385,56 @@ function renderSignal(){
     var pl=mkPlan(1,price),ps=mkPlan(-1,price);
     $('sref').innerHTML='Plan de referencia a '+fp(price)+' · <span class="up">▲ LONG</span> TP '+fp(pl.tp)+' ('+Math.round(pl.tpPts)+' pts) / SL '+fp(pl.sl)+' · <span class="dn">▼ SHORT</span> TP '+fp(ps.tp)+' ('+Math.round(ps.tpPts)+' pts) / SL '+fp(ps.sl);
   }
-  var w=0,l=0,o=0,R=0;
-  S.sigs.forEach(function(g){if(g.status==='tp'){w++;R+=g.rr;}else if(g.status==='sl'){l++;R-=1;}else if(g.status==='open')o++;});
-  $('sstats').textContent=S.sigs.length?('Sesión: '+S.sigs.length+' señales · TP '+w+' · SL '+l+' · abiertas '+o+(w+l>0?' · acierto '+Math.round(w/(w+l)*100)+'% · resultado '+(R>=0?'+':'')+R.toFixed(1)+'R':'')+(w+l<20?' (muestra pequeña: no concluyente)':'')):'Aún no hay señales en esta sesión.';
+  renderStats();
   var hh='';
   S.sigs.slice(0,8).forEach(function(g){
-    hh+='<div class="sh"><span class="tm">'+hm(g.t)+'</span><span class="'+(g.dir>0?'up':'dn')+'">'+(g.dir>0?'▲':'▼')+'</span><span>'+g.a+' '+fp(g.entry)+' → TP '+fp(g.tp)+' / SL '+fp(g.sl)+'</span><span class="st-'+g.status+'">'+STAT[g.status]+'</span></div>';
+    hh+='<div class="sh"><span class="tm">'+dhm(g.t)+'</span><span class="'+(g.dir>0?'up':'dn')+'">'+(g.dir>0?'▲':'▼')+'</span><span>'+g.a+' '+fp(g.entry)+' → TP '+fp(g.tp)+' / SL '+fp(g.sl)+'</span><span class="st-'+g.status+'">'+STAT[g.status]+'</span></div>';
   });
   $('shist').innerHTML=hh;
+}
+/* ---- historial persistente y contador estadístico ---- */
+var SIG_KEY='lhm_sigs_v1';
+function sigsSave(){try{localStorage.setItem(SIG_KEY,JSON.stringify(S.sigs.slice(0,500)));}catch(e){}}
+function sigsLoad(){
+  try{
+    var a=JSON.parse(localStorage.getItem(SIG_KEY)||'[]');
+    if(!Array.isArray(a))return;
+    /* una señal abierta de una visita anterior no se pudo seguir mientras la página estaba cerrada */
+    a.forEach(function(g){if(g.status==='open')g.status='exp';if(g.id>S.sigId)S.sigId=g.id;});
+    S.sigs=a;
+  }catch(e){}
+}
+function renderStats(){
+  var scope=CFG.statScope==='asset';
+  var mk=function(){return {n:0,w:0,l:0,o:0,x:0,R:0};};
+  var L=mk(),Sh=mk(),T=mk();
+  S.sigs.forEach(function(g){
+    if(scope&&g.a!==S.asset)return;
+    [g.dir>0?L:Sh,T].forEach(function(b){
+      b.n++;
+      if(g.status==='tp'){b.w++;b.R+=g.rr;}
+      else if(g.status==='sl'){b.l++;b.R-=1;}
+      else if(g.status==='open')b.o++;
+      else b.x++;
+    });
+  });
+  var row=function(lab,cl,b){
+    var c=b.w+b.l,pct=c>0?Math.round(b.w/c*100):null;
+    return '<div class="stt"><span class="'+cl+'">'+lab+'</span><span>'+b.n+'</span><span class="up">'+b.w+'</span><span class="dn">'+b.l+'</span>'+
+      '<b class="'+(pct===null?'':(pct>=50?'up':'dn'))+'">'+(pct===null?'—':pct+'%')+'</b>'+
+      '<span class="'+(b.R>=0?'up':'dn')+'">'+(c>0?(b.R>=0?'+':'−')+Math.abs(b.R).toFixed(1)+'R':'—')+'</span></div>';
+  };
+  var h;
+  if(!T.n){h='<div class="small">Aún no hay señales'+(scope?' de '+S.asset:'')+'.</div>';}
+  else{
+    h='<div class="stt hd"><span></span><span>N.º</span><span>Aciertos</span><span>Fallos</span><span>%</span><span>Result.</span></div>'+
+      row('▲ LONG','up',L)+row('▼ SHORT','dn',Sh)+row('Total','',T);
+    var ex=[];if(T.o)ex.push(T.o+' abiertas');if(T.x)ex.push(T.x+' sin cierre');
+    h+='<div class="small" style="margin-top:4px">'+(ex.length?ex.join(' · ')+' (no cuentan en el %). ':'')+
+      ((T.w+T.l)<20?'Muestra pequeña ('+(T.w+T.l)+' cerradas): no concluyente. ':'')+
+      'Acierto = TP alcanzado, fallo = SL alcanzado; resultado en R según tu R:R. Se guarda en este navegador.</div>';
+  }
+  $('sstats').innerHTML=h;
 }
 function noop(){}
 /* OKX: sz viene en contratos; hace falta el valor de contrato */
@@ -1650,7 +1703,7 @@ buildUI();legend();renderInfo();
 wsBinance();wsBybit();wsOKX();wsKraken();wsDeribit();
 loadOKX().catch(noop);
 setInterval(function(){if(!Object.keys(OKX_CT).length)loadOKX().catch(noop);},10000);
-cfgLoad();bindAl();syncAlUI();updAlStat();refreshBtcRef();setInterval(refreshBtcRef,20000);
+cfgLoad();sigsLoad();bindAl();syncAlUI();updAlStat();refreshBtcRef();setInterval(refreshBtcRef,20000);
 setInterval(function(){renderFeed();renderInfo();updateBias();},1000);
 setInterval(function(){renderFlow();renderSignal();if(S.flowDirty){S.flowDirty=false;if(S.flowDots)requestRender();}},500);
 loadAsset();
