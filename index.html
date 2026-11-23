@@ -96,6 +96,13 @@ details summary{cursor:pointer;color:#9fb0c8}
 #alarmbar button{background:#fff;color:#111;border:0;font-weight:700;padding:6px 14px}
 .wr{display:grid;grid-template-columns:44px 40px 1fr 92px;gap:4px;padding:3px 2px;border-bottom:1px solid #161d2b;font-size:12px;font-variant-numeric:tabular-nums;align-items:center;cursor:pointer;white-space:nowrap}
 .wr.sel{background:#151b27}
+.wsel{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
+.wchip{padding:3px 8px;font-size:11px;border-radius:12px;border:1px solid #2a3346;background:#10151f;color:var(--mut);cursor:pointer}
+.wchip.on{background:#12382a;border-color:#1f6b4b;color:#7dffc0}
+.wchip.ctl2{border-style:dashed}
+.stt2{display:grid;grid-template-columns:44px 1fr 1fr 1fr 46px;gap:4px;white-space:nowrap;padding:3px 0;border-bottom:1px solid #161d2b;font-variant-numeric:tabular-nums;text-align:right;align-items:center;font-size:12px}
+.stt2.hd{color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+.stt2>span:first-child{text-align:left;font-weight:600}
 #watchbtn.on{background:#12382a;border-color:#1f6b4b;color:#7dffc0}
 .sh{display:grid;grid-template-columns:78px 16px 1fr 62px;gap:4px;padding:2px 0;border-bottom:1px solid #161d2b;font-size:12px;font-variant-numeric:tabular-nums;align-items:center}
 .sh .tm{color:var(--mut)}
@@ -123,6 +130,7 @@ details summary{cursor:pointer;color:#9fb0c8}
       <select id="range"><option value="auto">Auto</option><option value="3">±3%</option><option value="5">±5%</option><option value="10">±10%</option><option value="20">±20%</option><option value="30">±30%</option></select>
     </div>
     <div class="grp"><span>Intensidad</span><input type="range" id="gain" min="0.5" max="3" step="0.1" value="1.3"></div>
+    <div class="grp" title="Paleta de colores del mapa de calor"><span>Paleta</span><select id="palsel"><option value="viridis">Viridis (por defecto)</option><option value="inferno">Inferno</option><option value="plasma">Plasma</option><option value="magma">Magma</option><option value="cividis">Cividis (daltonismo)</option><option value="turbo">Arcoíris</option><option value="coinglass">Estilo Coinglass</option><option value="ice">Hielo</option><option value="fire">Fuego</option><option value="mono">Grises</option></select></div>
     <div class="grp" title="Opacidad del mapa de calor: bájala para ver mejor velas y señales"><span>Fondo</span><input type="range" id="heatop" min="0.3" max="1" step="0.05" value="0.8"></div>
     <div class="grp" title="Intensidad de burbujas, puntos de liquidación y señales"><span>Burbujas/señales</span><input type="range" id="ovop" min="0.3" max="1" step="0.05" value="0.85"></div>
     <label><input type="checkbox" id="split"> Largos/cortos por color</label>
@@ -157,9 +165,10 @@ details summary{cursor:pointer;color:#9fb0c8}
       <div class="mag" id="bmag"></div>
     </div>
     <div class="card" id="watchcard" style="display:none">
-      <div class="h"><span>Vigilancia · todos los activos</span><span id="wstat"></span></div>
+      <div class="h"><span>Vigilancia · activos</span><span id="wstat"></span></div>
+      <div id="wsel" class="wsel"></div>
       <div id="wlist"></div>
-      <div class="small">Una señal = un aviso, aunque lleguen varias a la vez. Pulsa un activo para verlo en el gráfico.</div>
+      <div class="small">Marca los activos que quieres vigilar. El activo que estás viendo siempre se vigila. Una señal = un aviso, aunque lleguen varias a la vez. Pulsa una fila para verlo en el gráfico.</div>
     </div>
     <div class="card" id="sigcard">
       <div class="h"><span>Señal de entrada · <b id="ssym"></b></span><span id="sscore"></span></div>
@@ -173,7 +182,7 @@ details summary{cursor:pointer;color:#9fb0c8}
           <select id="tpmode"><option value="auto">Auto (imán de liquidaciones)</option><option value="manual">Manual</option></select>
         </label>
       </div>
-      <div class="ctl"><label>Rango <input type="range" id="tpval" min="500" max="1800" step="50"> <b id="tpvalout"></b> pts</label></div>
+      <div class="ctl"><label>Rango <input type="range" id="tpval" min="100" max="1800" step="50"> <b id="tpvalout"></b> pts</label></div>
       <div class="ctl">
         <label>R:R <select id="rrsel"><option value="1">1:1</option><option value="1.5">1:1,5</option><option value="2">1:2</option><option value="3">1:3</option></select></label>
         <label>Sensibilidad <select id="sens"><option value="low">Baja</option><option value="mid">Media</option><option value="high">Alta</option></select></label>
@@ -207,7 +216,7 @@ details summary{cursor:pointer;color:#9fb0c8}
         <div class="small" style="margin-top:6px">La página tiene que seguir abierta para vigilar el flujo. En portátil puede quedar en segundo plano. En iPhone/iPad debe estar en primer plano con la pantalla encendida (activa «Mantener pantalla encendida»); el interruptor de silencio del iPhone puede mutear el sonido. Para recibir el aviso en el móvil aunque esté bloqueado, deja la página abierta en el portátil, instala la app ntfy en el móvil y escribe aquí el mismo tema: el texto de la señal (activo, precios, TP y SL) se envía al servicio público ntfy.sh, así que usa un tema largo y secreto.</div>
       </details>
       <div style="margin-top:10px">
-        <div class="h"><span>Estadísticas de señales</span><span><select id="statscope"><option value="all">Todos los activos</option><option value="asset">Solo este activo</option></select> <button id="statreset" title="Borrar historial y estadísticas">Reiniciar</button></span></div>
+        <div class="h"><span>Estadísticas de señales</span><span><select id="statscope"></select> <button id="statreset" title="Borrar historial y estadísticas">Reiniciar</button></span></div>
         <div id="sstats"></div>
       </div>
       <div id="shist"></div>
@@ -246,13 +255,13 @@ details summary{cursor:pointer;color:#9fb0c8}
 (function(){
 'use strict';
 var $=function(id){return document.getElementById(id);};
-var ASSETS=['BTC','ETH','SOL','HYPE','HBAR','TAO','LINK','SUI','NEAR','AAVE','INJ'];
+var ASSETS=['BTC','ETH','SOL','HYPE','HBAR','TAO','LINK','SUI','NEAR','AAVE','INJ','XRP'];
 var SYM={}; ASSETS.forEach(function(a){SYM[a+'USDT']=a;});
 var TF={'5m':{ms:300000,bn:'5m',by:'5'},'15m':{ms:900000,bn:'15m',by:'15'},'1h':{ms:3600000,bn:'1h',by:'60'},'4h':{ms:14400000,bn:'4h',by:'240'}};
 var LEVS=[10,25,50,100], LEVW={10:0.30,25:0.30,50:0.25,100:0.15}, MM=0.004, NCAND=300, ROWS=220, MINC=10;
 var BN='https://fapi.binance.com', BY='https://api.bybit.com';
 var S={asset:'BTC',tf:'5m',levs:new Set(LEVS),layer:'liq',split:false,candles:true,dots:true,gain:1.3,range:'auto',onlySel:true,
- k:[],oi:0,oiA:0,oiB:0,oiEst:false,book:null,hist:[],model:null,liqs:[],src:'',dirty:false,tok:0,timers:[],mouse:null,G:null,feedDirty:true,err:'',lastUpdate:0,ws:{bn:false,by:false,ok:false,kr:false,db:false},raf:0,bigSel:'auto',flowDots:true,flowDirty:false,trWs:{bn:false,by:false,ok:false},V:{live:true,spanC:1e9,tR:0,yMode:'full',p0:0,p1:0},VW:null,cm:null,dmodel:null,dRange:null,dTimer:0,drag:false,sigs:[],sigId:0,btcRef:0};
+ k:[],oi:0,oiA:0,oiB:0,oiEst:false,book:null,hist:[],model:null,liqs:[],src:'',dirty:false,tok:0,timers:[],mouse:null,G:null,feedDirty:true,err:'',lastUpdate:0,ws:{bn:false,by:false,ok:false,kr:false,db:false},raf:0,bigSel:'auto',flowDots:true,flowDirty:false,trWs:{bn:false,by:false,ok:false},V:{live:true,spanC:1e9,tR:0,yMode:'full',p0:0,p1:0},VW:null,cm:null,dmodel:null,dRange:null,dTimer:0,drag:false,sigs:[],sigId:0,btcRef:0,cUp:'120,230,170',cDn:'255,120,120'};
 
 /* ---------- utilidades ---------- */
 function p2(n){return (n<10?'0':'')+n;}
@@ -270,9 +279,25 @@ function jget(u){return fetch(u,{cache:'no-store'}).then(function(r){if(!r.ok)th
 
 /* ---------- paletas ---------- */
 function mkPal(st){var p=new Uint8ClampedArray(768);for(var i=0;i<256;i++){var t=i/255,j=0;while(j<st.length-2&&t>st[j+1][0])j++;var a=st[j],b=st[j+1];var u=clamp((t-a[0])/(b[0]-a[0]),0,1);for(var c=0;c<3;c++)p[i*3+c]=a[c+1]+(b[c+1]-a[c+1])*u;}return p;}
-var PAL_V=mkPal([[0,68,1,84],[0.25,59,82,139],[0.5,33,145,140],[0.75,94,201,98],[1,253,231,37]]);
-var PAL_L=mkPal([[0,10,40,80],[0.5,30,150,220],[1,200,250,255]]);
-var PAL_S=mkPal([[0,70,10,90],[0.5,220,60,150],[1,255,225,120]]);
+var PALSETS={
+  viridis:{n:'Viridis (por defecto)',v:[[0,68,1,84],[0.25,59,82,139],[0.5,33,145,140],[0.75,94,201,98],[1,253,231,37]],l:[[0,10,40,80],[0.5,30,150,220],[1,200,250,255]],s:[[0,70,10,90],[0.5,220,60,150],[1,255,225,120]],up:'120,230,170',dn:'255,120,120'},
+  inferno:{n:'Inferno',v:[[0,0,0,4],[0.25,87,16,110],[0.5,188,55,84],[0.75,249,142,9],[1,252,255,164]],l:[[0,5,15,60],[0.5,40,110,220],[1,190,235,255]],s:[[0,60,8,50],[0.5,220,70,60],[1,255,235,140]],up:'90,225,255',dn:'255,255,255'},
+  plasma:{n:'Plasma',v:[[0,13,8,135],[0.25,126,3,168],[0.5,204,71,120],[0.75,248,149,64],[1,240,249,33]],l:[[0,8,12,100],[0.5,60,120,230],[1,200,235,255]],s:[[0,90,5,120],[0.5,230,80,120],[1,250,230,60]],up:'90,225,255',dn:'255,255,255'},
+  magma:{n:'Magma',v:[[0,0,0,4],[0.25,81,18,124],[0.5,183,55,121],[0.75,252,137,97],[1,252,253,191]],l:[[0,5,10,50],[0.5,50,100,200],[1,200,225,255]],s:[[0,50,10,70],[0.5,200,60,110],[1,255,230,190]],up:'90,225,255',dn:'255,255,255'},
+  cividis:{n:'Cividis (daltonismo)',v:[[0,0,34,78],[0.25,66,78,108],[0.5,124,123,120],[0.75,187,170,105],[1,254,232,56]],l:[[0,0,25,70],[0.5,60,100,160],[1,190,210,240]],s:[[0,60,50,20],[0.5,170,140,60],[1,255,235,110]],up:'110,200,255',dn:'255,170,60'},
+  turbo:{n:'Arcoíris',v:[[0,35,23,80],[0.2,66,100,240],[0.4,30,200,200],[0.6,120,235,70],[0.8,250,190,40],[1,215,50,35]],l:[[0,20,20,90],[0.5,40,160,230],[1,160,250,230]],s:[[0,90,20,80],[0.5,240,120,60],[1,255,240,90]],up:'255,255,255',dn:'255,60,200'},
+  coinglass:{n:'Estilo Coinglass',v:[[0,20,10,60],[0.25,50,50,170],[0.5,20,170,200],[0.75,120,230,120],[1,255,240,90]],l:[[0,10,30,90],[0.5,30,170,210],[1,170,250,200]],s:[[0,60,15,100],[0.5,200,60,160],[1,255,230,100]],up:'120,230,170',dn:'255,120,120'},
+  ice:{n:'Hielo',v:[[0,5,10,25],[0.5,30,110,190],[1,225,245,255]],l:[[0,5,25,60],[0.5,40,140,220],[1,210,245,255]],s:[[0,30,30,60],[0.5,150,130,210],[1,245,235,255]],up:'120,240,170',dn:'255,130,130'},
+  fire:{n:'Fuego',v:[[0,10,0,0],[0.4,150,20,10],[0.75,250,130,20],[1,255,245,170]],l:[[0,10,20,40],[0.5,200,90,20],[1,255,220,120]],s:[[0,40,0,20],[0.5,200,30,60],[1,255,200,150]],up:'90,225,255',dn:'255,255,255'},
+  mono:{n:'Grises',v:[[0,10,10,14],[1,235,235,240]],l:[[0,10,12,18],[1,200,215,240]],s:[[0,16,12,12],[1,245,215,200]],up:'120,230,170',dn:'255,110,110'}
+};
+var PSEL=PALSETS.viridis,PAL_V=mkPal(PSEL.v),PAL_L=mkPal(PSEL.l),PAL_S=mkPal(PSEL.s);
+function applyPalette(){
+  PSEL=PALSETS[CFG.pal]||PALSETS.viridis;
+  PAL_V=mkPal(PSEL.v);PAL_L=mkPal(PSEL.l);PAL_S=mkPal(PSEL.s);
+  S.cUp=PSEL.up;S.cDn=PSEL.dn;
+}
+function palCss(st){return 'linear-gradient(90deg,'+st.map(function(s){return 'rgb('+s[1]+','+s[2]+','+s[3]+')';}).join(',')+')';}
 var PAL_BID=mkPal([[0,10,60,40],[1,90,255,180]]);
 var PAL_ASK=mkPal([[0,70,15,20],[1,255,110,100]]);
 function palStr(p,t){var i=Math.round(clamp(t,0,1)*255)*3;return 'rgb('+p[i]+','+p[i+1]+','+p[i+2]+')';}
@@ -433,7 +458,7 @@ function refreshOI(tok){
 }
 function loadAsset(){
   resetView();
-  var trKey=CFG.watchAll?'*':S.asset;
+  var trKey=CFG.watchAll?watchKey():S.asset;
   if(TR.asset!==trKey){TR.asset=trKey;startTrades();}
   var tok=++S.tok;
   S.timers.forEach(clearInterval);S.timers=[];
@@ -625,7 +650,7 @@ function rowClip(m,VW,G){
 }
 function heatImage(m){
   var n=m.n,R=m.R,NC1=m.NC1;
-  var key=S.layer+'|'+S.split+'|'+S.gain+'|'+Array.from(S.levs).sort().join(',');
+  var key=S.layer+'|'+S.split+'|'+S.gain+'|'+CFG.pal+'|'+Array.from(S.levs).sort().join(',');
   if(m._ik===key&&m._img)return m._img;
   var cv=m._img||(m._img=document.createElement('canvas'));
   cv.width=NC1;cv.height=R;
@@ -779,7 +804,7 @@ function render(){
     var bw=Math.min(40,Math.max(1,cw*0.65));
     [0,1].forEach(function(pass){
       [true,false].forEach(function(up){
-        ctx.strokeStyle=pass?(up?'rgba(120,230,170,0.98)':'rgba(255,120,120,0.98)'):'rgba(4,7,12,0.62)';
+        ctx.strokeStyle=pass?'rgba('+(up?S.cUp:S.cDn)+',0.98)':'rgba(4,7,12,0.62)';
         ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=pass?1:3;ctx.beginPath();
         for(var q=0;q<k.length;q++){
           var cc=k[q];if((cc.c>=cc.o)!==up)continue;
@@ -887,8 +912,8 @@ function drawStrips(ctx,G,m,VW){
 function legend(){
   var h='';
   if(S.layer==='liq'){
-    h=S.split?'<span>Largos</span><i class="gr" style="background:linear-gradient(90deg,#0a2850,#1e96dc,#c8faff)"></i><span>Cortos</span><i class="gr" style="background:linear-gradient(90deg,#460a5a,#dc3c96,#ffe178)"></i>'
-      :'<span>Pocas liquidaciones</span><i class="gr" style="background:linear-gradient(90deg,#440154,#3b528b,#21918c,#5ec962,#fde725)"></i><span>Muchas</span>';
+    h=S.split?'<span>Largos</span><i class="gr" style="background:'+palCss(PSEL.l)+'"></i><span>Cortos</span><i class="gr" style="background:'+palCss(PSEL.s)+'"></i>'
+      :'<span>Pocas liquidaciones</span><i class="gr" style="background:'+palCss(PSEL.v)+'"></i><span>Muchas</span>';
     h+='<span>· puntos = liquidaciones reales (rojo: largos, verde: cortos)</span>';
   }else if(S.layer==='vol'){
     h='<span>Vendedor</span><i class="gr" style="background:linear-gradient(90deg,#ef5350,#c8c8d2,#26c278)"></i><span>Comprador</span><span>· el brillo indica el volumen operado</span>';
@@ -1082,8 +1107,9 @@ function trConn(tok,key,url,onopen,pingMsg,onmsg){
 }
 function startTrades(){
   stopTrades();
-  var tok=TR.tok,all=!!CFG.watchAll,list=all?ASSETS.slice():[S.asset];
+  var tok=TR.tok,all=!!CFG.watchAll,list=all?watchSet():[S.asset];
   if(!all)FS={};
+  else Object.keys(FS).forEach(function(a){if(list.indexOf(a)<0)delete FS[a];});
   list.forEach(fstore);
   S.trWs={bn:false,by:false,ok:false};S.flowDirty=true;
   var only=all?null:S.asset;
@@ -1206,12 +1232,12 @@ function drawCVD(){
 }
 /* ---------- señales de entrada por flujo de órdenes + alarma ---------- */
 var CFG_KEY='lhm_cfg_v1',TITLE0=document.title;
-var CFG={tpMode:'auto',tpPts:1000,rr:1.5,sens:'mid',dir:'both',cd:5,on:false,snd:true,vol:0.6,tone:'bell',voice:false,notif:true,vib:true,rep:'3',wake:false,bg:false,ntfy:'',statScope:'all',watchAll:false,heatOp:0.8,ovOp:0.85,msbOn:true,msbBB:true,msbZz:true,utOn:true,stUse:true,zl:9,fib:0.33,utA:1,utC:10};
+var CFG={tpMode:'auto',tpPts:1000,rr:1.5,sens:'mid',dir:'both',cd:5,on:false,snd:true,vol:0.6,tone:'bell',voice:false,notif:true,vib:true,rep:'3',wake:false,bg:false,ntfy:'',statScope:'all',watchAll:false,watchList:ASSETS.slice(),pal:'viridis',heatOp:0.8,ovOp:0.85,msbOn:true,msbBB:true,msbZz:true,utOn:true,stUse:true,zl:9,fib:0.33,utA:1,utC:10};
 var SENS={low:60,mid:45,high:32},WARM_MS=120000,WARM_N=40,PERSIST_MS=8000;
-var NAMES={BTC:'Bitcoin',ETH:'Ethereum',SOL:'Solana',HYPE:'Hyperliquid',HBAR:'Hedera',TAO:'Tao',LINK:'Link',SUI:'Sui',NEAR:'Near',AAVE:'Aave',INJ:'Injective'};
+var NAMES={BTC:'Bitcoin',ETH:'Ethereum',SOL:'Solana',HYPE:'Hyperliquid',HBAR:'Hedera',TAO:'Tao',LINK:'Link',SUI:'Sui',NEAR:'Near',AAVE:'Aave',INJ:'Injective',XRP:'XRP'};
 var STAT={open:'abierta',tp:'TP alcanzado',sl:'SL alcanzado',exp:'caducada'};
 var AU={ctx:null,ringing:false,timer:0,tb:0,n:0,wl:null,bg:null,extra:[]};
-function cfgLoad(){try{var o=JSON.parse(localStorage.getItem(CFG_KEY)||'{}');for(var k in o){if(k in CFG)CFG[k]=o[k];}}catch(e){}CFG.on=false;CFG.heatOp=clamp(+CFG.heatOp||0.8,0.3,1);CFG.ovOp=clamp(+CFG.ovOp||0.85,0.3,1);CFG.watchAll=!!CFG.watchAll;CFG.zl=Math.round(clamp(+CFG.zl||9,3,50));CFG.fib=clamp(isFinite(+CFG.fib)?+CFG.fib:0.33,0,1);CFG.utA=clamp(+CFG.utA||1,0.5,10);CFG.utC=Math.round(clamp(+CFG.utC||10,1,50));}
+function cfgLoad(){try{var o=JSON.parse(localStorage.getItem(CFG_KEY)||'{}');for(var k in o){if(k in CFG)CFG[k]=o[k];}}catch(e){}CFG.on=false;CFG.heatOp=clamp(+CFG.heatOp||0.8,0.3,1);CFG.ovOp=clamp(+CFG.ovOp||0.85,0.3,1);CFG.watchAll=!!CFG.watchAll;CFG.zl=Math.round(clamp(+CFG.zl||9,3,50));CFG.fib=clamp(isFinite(+CFG.fib)?+CFG.fib:0.33,0,1);CFG.utA=clamp(+CFG.utA||1,0.5,10);CFG.utC=Math.round(clamp(+CFG.utC||10,1,50));CFG.tpPts=Math.round(clamp(+CFG.tpPts||1000,100,1800)/50)*50;if(!PALSETS[CFG.pal])CFG.pal='viridis';if(!(CFG.watchList instanceof Array))CFG.watchList=ASSETS.slice();CFG.watchList=CFG.watchList.filter(function(a){return ASSETS.indexOf(a)>=0;});if(!validScope(CFG.statScope))CFG.statScope='all';}
 function cfgSave(){try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}}
 function pcts(v){return (v>=0?'+':'−')+Math.abs(v*100).toFixed(0)+'%';}
 function cls2(v){return v>=0?'up':'dn';}
@@ -1330,9 +1356,9 @@ function stGet(){
   return S.st;
 }
 /* nivel estructural más cercano a favor (para SL) y OB contrario más cercano (para TP) */
-function structLevels(dir,price,f){
+function structLevels(dir,price,f,tpPts){
   var st=(CFG.stUse&&(CFG.msbOn||CFG.utOn))?stGet():null;if(!st)return null;
-  var at=atr14(),buf=0.1*at,sl=null,tp=null,minD=200*f,maxD=1800*f;
+  var at=atr14(),buf=0.1*at,sl=null,tp=null,minD=Math.min(100,tpPts*0.5)*f,maxD=clamp(tpPts*2.5,150,1800)*f;
   var cand=[];
   if(CFG.utOn&&st.ut.stop.length){var us=st.ut.stop[S.k.length-1];if(isFinite(us))cand.push({p:dir>0?us-buf:us+buf,src:'UT Bot'});}
   if(CFG.msbOn){st.obs.forEach(function(o){
@@ -1349,12 +1375,12 @@ function atr14(){
   for(var i=n-14;i<n;i++){sum+=Math.max(k[i].h-k[i].l,Math.abs(k[i].h-k[i-1].c),Math.abs(k[i].l-k[i-1].c));}
   return sum/14;
 }
-/* TP automático: el mayor cluster de liquidaciones en la dirección de la operación, entre 500 y 1800 pts */
+/* TP automático: el mayor cluster de liquidaciones en la dirección de la operación, entre 100 y 1800 pts */
 function autoTP(dir,price,f,a){
   var m=(a===S.asset)?S.model:null;
   if(!m||!m.sl)return 1000;
   var n=m.n,NC1=m.NC1,R=m.R,best=0,bp=0,r,q;
-  var a=price+dir*500*f,b=price+dir*1800*f,pa=Math.min(a,b),pb=Math.max(a,b);
+  var a=price+dir*100*f,b=price+dir*1800*f,pa=Math.min(a,b),pb=Math.max(a,b);
   for(r=2;r<R-2;r++){
     var p=m.pmin+(r+0.5)*m.step;
     if(p<pa||p>pb)continue;
@@ -1362,13 +1388,13 @@ function autoTP(dir,price,f,a){
     if(sm>best){best=sm;bp=p;}
   }
   if(!bp)return 1000;
-  return clamp(Math.round(Math.abs(bp-price)/f*0.97/50)*50,500,1800);
+  return clamp(Math.round(Math.abs(bp-price)/f*0.97/50)*50,100,1800);
 }
 function mkPlan(dir,price,a){
   a=a||S.asset;
-  var f=ptScale(price,a),tpPts=clamp(CFG.tpMode==='auto'?autoTP(dir,price,f,a):CFG.tpPts,500,1800);
-  var tpSrc='',slSrc='',sv=(a===S.asset)?structLevels(dir,price,f):null;
-  if(sv&&sv.tp&&CFG.tpMode==='auto'){var td=(sv.tp.p-price)*dir/f;if(td>=500&&td<tpPts){tpPts=Math.round(td);tpSrc=sv.tp.src;}}
+  var f=ptScale(price,a),tpPts=clamp(CFG.tpMode==='auto'?autoTP(dir,price,f,a):CFG.tpPts,100,1800);
+  var tpSrc='',slSrc='',sv=(a===S.asset)?structLevels(dir,price,f,tpPts):null;
+  if(sv&&sv.tp&&CFG.tpMode==='auto'){var td=(sv.tp.p-price)*dir/f;if(td>=100&&td<tpPts){tpPts=Math.round(td);tpSrc=sv.tp.src;}}
   var tpD=tpPts*f,slD=tpD/CFG.rr;
   if(sv&&sv.sl){slD=(price-sv.sl.p)*dir;slSrc=sv.sl.src;}
   var rr=slD>0?Math.round(tpD/slD*10)/10:CFG.rr;
@@ -1462,12 +1488,21 @@ function expireSigs(){
   S.sigs.forEach(function(g){if(g.status==='open'&&now-g.t>6*3600000){g.status='exp';ch=true;}});
   if(ch){sigsSave();S.flowDirty=true;}
 }
+function inWatch(a){return CFG.watchList.indexOf(a)>=0;}
+function watchSet(){var s=ASSETS.filter(inWatch);if(s.indexOf(S.asset)<0)s.push(S.asset);return s;}
+function watchKey(){return '*'+watchSet().join(',');}
+function buildWatchSel(){
+  var h='<button class="wchip ctl2" data-w="*all">Todos</button><button class="wchip ctl2" data-w="*none">Ninguno</button>';
+  ASSETS.forEach(function(a){h+='<button class="wchip'+(inWatch(a)?' on':'')+'" data-w="'+a+'">'+a+'</button>';});
+  $('wsel').innerHTML=h;
+}
 function renderWatch(){
   var card=$('watchcard');if(!card)return;
   card.style.display=CFG.watchAll?'':'none';
   if(!CFG.watchAll)return;
   var now=Date.now(),thr=SENS[CFG.sens],h='',live=0;
-  ASSETS.forEach(function(a){
+  var wset=watchSet();
+  wset.forEach(function(a){
     var f=fstore(a);
     if(f.bk.length&&now-f.lastEval>=1500)evalSignal(f);
     var st=f.sigState,sc='—',cl='',tx='sin datos';
@@ -1483,7 +1518,7 @@ function renderWatch(){
     h+='<div class="wr'+(a===S.asset?' sel':'')+'" data-a="'+a+'"><b>'+a+'</b><span class="'+cl+'">'+sc+'</span><span>'+tx+'</span><span>'+ls+'</span></div>';
   });
   $('wlist').innerHTML=h;
-  $('wstat').textContent=live+'/'+ASSETS.length+' con datos';
+  $('wstat').textContent=live+'/'+wset.length+' con datos';
 }
 function syncWatchUI(){
   var b=$('watchbtn');b.textContent='Vigilar todos los activos: '+(CFG.watchAll?'SÍ':'NO');b.className=CFG.watchAll?'on':'';
@@ -1619,7 +1654,7 @@ function testPush(){
   pushNtfy(g,sigText(g),function(m){$('al_msg').textContent=m;});
 }
 var BIND=[['tpmode','tpMode','s'],['tpval','tpPts','n'],['rrsel','rr','n'],['sens','sens','s'],['dirsel','dir','s'],['cdsel','cd','n'],
-  ['al_on','on','b'],['al_snd','snd','b'],['al_vol','vol','n'],['al_tone','tone','s'],['al_rep','rep','s'],['al_voice','voice','b'],['al_notif','notif','b'],['al_vib','vib','b'],['al_wake','wake','b'],['al_bg','bg','b'],['al_ntfy','ntfy','s'],['statscope','statScope','s'],['heatop','heatOp','n'],['ovop','ovOp','n'],['st_msb','msbOn','b'],['st_bb','msbBB','b'],['st_zz','msbZz','b'],['st_ut','utOn','b'],['st_use','stUse','b'],['st_zl','zl','n'],['st_fib','fib','n'],['st_ka','utA','n'],['st_kc','utC','n']];
+  ['al_on','on','b'],['al_snd','snd','b'],['al_vol','vol','n'],['al_tone','tone','s'],['al_rep','rep','s'],['al_voice','voice','b'],['al_notif','notif','b'],['al_vib','vib','b'],['al_wake','wake','b'],['al_bg','bg','b'],['al_ntfy','ntfy','s'],['statscope','statScope','s'],['heatop','heatOp','n'],['palsel','pal','s'],['ovop','ovOp','n'],['st_msb','msbOn','b'],['st_bb','msbBB','b'],['st_zz','msbZz','b'],['st_ut','utOn','b'],['st_use','stUse','b'],['st_zl','zl','n'],['st_fib','fib','n'],['st_ka','utA','n'],['st_kc','utC','n']];
 function syncAlUI(){
   BIND.forEach(function(b){var el=$(b[0]);if(!el)return;if(b[2]==='b')el.checked=!!CFG[b[1]];else el.value=CFG[b[1]];});
   $('tpvalout').textContent=CFG.tpPts;$('tpval').disabled=(CFG.tpMode==='auto');
@@ -1630,6 +1665,7 @@ function onCfgChange(id){
   else if(id==='al_bg'){bgAudio(CFG.bg&&CFG.on);}
   else if(id==='al_notif'&&CFG.notif&&CFG.on){try{if(window.Notification&&Notification.permission==='default')Notification.requestPermission().then(updAlStat);}catch(e){}}
   if(id==='heatop'||id==='ovop')requestRender();
+  if(id==='palsel'){applyPalette();try{legend();}catch(e){}requestRender();}
   if(id.indexOf('st_')===0){S.stKey='';requestRender();}
   $('tpvalout').textContent=CFG.tpPts;$('tpval').disabled=(CFG.tpMode==='auto');
   updAlStat();
@@ -1717,34 +1753,49 @@ function sigsLoad(){
     S.sigs=a;
   }catch(e){}
 }
+function validScope(s){return s==='all'||s==='asset'||s==='by'||(typeof s==='string'&&s.indexOf('x:')===0&&ASSETS.indexOf(s.slice(2))>=0);}
+function fillStatSel(){
+  var h='<option value="all">Todos los activos (suma)</option><option value="asset">Solo el activo que veo</option><option value="by">Desglose por activo</option><optgroup label="Un activo concreto">';
+  ASSETS.forEach(function(a){h+='<option value="x:'+a+'">'+a+'</option>';});
+  $('statscope').innerHTML=h+'</optgroup>';
+}
 function renderStats(){
-  var scope=CFG.statScope==='asset';
+  var sc=CFG.statScope,by=sc==='by';
   var mk=function(){return {n:0,w:0,l:0,o:0,x:0,R:0};};
-  var L=mk(),Sh=mk(),T=mk();
+  var L=mk(),Sh=mk(),T=mk(),per={};
+  var add=function(b,g){b.n++;if(g.status==='tp'){b.w++;b.R+=g.rr;}else if(g.status==='sl'){b.l++;b.R-=1;}else if(g.status==='open')b.o++;else b.x++;};
   S.sigs.forEach(function(g){
-    if(scope&&g.a!==S.asset)return;
-    [g.dir>0?L:Sh,T].forEach(function(b){
-      b.n++;
-      if(g.status==='tp'){b.w++;b.R+=g.rr;}
-      else if(g.status==='sl'){b.l++;b.R-=1;}
-      else if(g.status==='open')b.o++;
-      else b.x++;
-    });
+    if(sc==='asset'&&g.a!==S.asset)return;
+    if(sc.indexOf('x:')===0&&g.a!==sc.slice(2))return;
+    var p=per[g.a]||(per[g.a]={L:mk(),S:mk(),T:mk()});
+    add(g.dir>0?L:Sh,g);add(T,g);add(g.dir>0?p.L:p.S,g);add(p.T,g);
   });
+  var who=sc==='asset'?S.asset:sc.indexOf('x:')===0?sc.slice(2):'';
   var row=function(lab,cl,b){
     var c=b.w+b.l,pct=c>0?Math.round(b.w/c*100):null;
     return '<div class="stt"><span class="'+cl+'">'+lab+'</span><span>'+b.n+'</span><span class="up">'+b.w+'</span><span class="dn">'+b.l+'</span>'+
       '<b class="'+(pct===null?'':(pct>=50?'up':'dn'))+'">'+(pct===null?'—':pct+'%')+'</b>'+
       '<span class="'+(b.R>=0?'up':'dn')+'">'+(c>0?(b.R>=0?'+':'−')+Math.abs(b.R).toFixed(1)+'R':'—')+'</span></div>';
   };
+  var cell=function(b){var c=b.w+b.l;return c?'<span title="'+b.n+' señales, '+b.o+' abiertas">'+b.w+'/'+b.l+' · '+Math.round(b.w/c*100)+'%</span>':'<span class="mut" title="'+b.n+' señales">'+(b.n?b.n+' abiertas':'—')+'</span>';};
   var h;
-  if(!T.n){h='<div class="small">Aún no hay señales'+(scope?' de '+S.asset:'')+'.</div>';}
+  if(!T.n){h='<div class="small">Aún no hay señales'+(who?' de '+who:'')+'.</div>';}
   else{
-    h='<div class="stt hd"><span></span><span>N.º</span><span>Aciertos</span><span>Fallos</span><span>%</span><span>Result.</span></div>'+
-      row('▲ LONG','up',L)+row('▼ SHORT','dn',Sh)+row('Total','',T);
+    if(by){
+      h='<div class="stt2 hd"><span>Activo</span><span>▲ LONG</span><span>▼ SHORT</span><span>Total</span><span>R</span></div>';
+      Object.keys(per).sort(function(a,b){return per[b].T.n-per[a].T.n;}).forEach(function(a){
+        var p=per[a],c=p.T.w+p.T.l;
+        h+='<div class="stt2"><span>'+a+'</span>'+cell(p.L)+cell(p.S)+cell(p.T)+'<span class="'+(p.T.R>=0?'up':'dn')+'">'+(c?(p.T.R>=0?'+':'−')+Math.abs(p.T.R).toFixed(1):'—')+'</span></div>';
+      });
+      h+=row('Total','',T);
+    }else{
+      h='<div class="stt hd"><span></span><span>N.º</span><span>Aciertos</span><span>Fallos</span><span>%</span><span>Result.</span></div>'+
+        row('▲ LONG','up',L)+row('▼ SHORT','dn',Sh)+row('Total','',T);
+    }
     var ex=[];if(T.o)ex.push(T.o+' abiertas');if(T.x)ex.push(T.x+' sin cierre');
     h+='<div class="small" style="margin-top:4px">'+(ex.length?ex.join(' · ')+' (no cuentan en el %). ':'')+
       ((T.w+T.l)<20?'Muestra pequeña ('+(T.w+T.l)+' cerradas): no concluyente. ':'')+
+      (by?'Cada celda: aciertos/fallos · %. ':'')+
       'Acierto = TP alcanzado, fallo = SL alcanzado; resultado en R según tu R:R. Se guarda en este navegador.</div>';
   }
   $('sstats').innerHTML=h;
@@ -1789,7 +1840,7 @@ function wsOKX(){
   };
 }
 /* Kraken Futures: feed "trade" con type = "liquidation"; side = lado del taker */
-var KR={BTC:'PF_XBTUSD',ETH:'PF_ETHUSD',SOL:'PF_SOLUSD',HYPE:'PF_HYPEUSD',HBAR:'PF_HBARUSD',TAO:'PF_TAOUSD',LINK:'PF_LINKUSD',SUI:'PF_SUIUSD',NEAR:'PF_NEARUSD',AAVE:'PF_AAVEUSD',INJ:'PF_INJUSD'};
+var KR={BTC:'PF_XBTUSD',ETH:'PF_ETHUSD',SOL:'PF_SOLUSD',HYPE:'PF_HYPEUSD',HBAR:'PF_HBARUSD',TAO:'PF_TAOUSD',LINK:'PF_LINKUSD',SUI:'PF_SUIUSD',NEAR:'PF_NEARUSD',AAVE:'PF_AAVEUSD',INJ:'PF_INJUSD',XRP:'PF_XRPUSD'};
 var KRR={};Object.keys(KR).forEach(function(a){KRR[KR[a]]=a;});
 function wsKraken(){
   var ws;try{ws=new WebSocket('wss://futures.kraken.com/ws/v1');}catch(e){setTimeout(wsKraken,5000);return;}
@@ -2016,13 +2067,21 @@ buildUI();legend();renderInfo();
 wsBinance();wsBybit();wsOKX();wsKraken();wsDeribit();
 loadOKX().catch(noop);
 setInterval(function(){if(!Object.keys(OKX_CT).length)loadOKX().catch(noop);},10000);
-$('watchbtn').onclick=function(){CFG.watchAll=!CFG.watchAll;cfgSave();TR.asset=CFG.watchAll?'*':S.asset;startTrades();syncWatchUI();requestRender();};
+$('watchbtn').onclick=function(){CFG.watchAll=!CFG.watchAll;cfgSave();TR.asset=CFG.watchAll?watchKey():S.asset;startTrades();syncWatchUI();requestRender();};
+$('wsel').onclick=function(e){
+  var el=e.target,w=el&&el.getAttribute?el.getAttribute('data-w'):null;if(!w)return;
+  if(w==='*all')CFG.watchList=ASSETS.slice();else if(w==='*none')CFG.watchList=[];
+  else{var i=CFG.watchList.indexOf(w);if(i>=0)CFG.watchList.splice(i,1);else CFG.watchList.push(w);}
+  cfgSave();
+  if(CFG.watchAll){TR.asset=watchKey();startTrades();}
+  buildWatchSel();renderWatch();
+};
 $('wlist').onclick=function(e){
   var el=e.target;while(el&&el!==this&&!(el.getAttribute&&el.getAttribute('data-a')))el=el.parentNode;
   var a=el&&el.getAttribute?el.getAttribute('data-a'):null;
   if(a&&a!==S.asset){S.asset=a;S.feedDirty=true;loadAsset();buildUI();renderWatch();}
 };
-cfgLoad();sigsLoad();bindAl();syncAlUI();syncWatchUI();updAlStat();refreshBtcRef();setInterval(refreshBtcRef,20000);
+fillStatSel();cfgLoad();applyPalette();buildWatchSel();sigsLoad();bindAl();syncAlUI();syncWatchUI();updAlStat();refreshBtcRef();setInterval(refreshBtcRef,20000);
 setInterval(function(){renderFeed();renderInfo();updateBias();},1000);
 setInterval(function(){expireSigs();renderFlow();renderSignal();renderWatch();if(S.flowDirty){S.flowDirty=false;if(S.flowDots)requestRender();}},500);
 loadAsset();
