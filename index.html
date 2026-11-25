@@ -1440,8 +1440,8 @@ function zzApply(tf,k){
     for(q in res.keys){if(!(q in prev.keys)&&res.keys[q]>=prev.lastEnd)fresh.push(q);}
     if(fresh.length&&res.last&&!(res.last.key in prev.keys)){
       var l=res.last,fw=l.z.b>=l.z.a,ps=fw?l.z.ya:l.z.yb,pe=fw?l.z.yb:l.z.ya;
-      var g={id:'zz'+Date.now()+tf,t:Date.now(),a:S.asset,dir:l.dir,zz:true,tf:tf,
-        text:'NUEVA LÍNEA ZIGZAG '+(l.dir>0?'ALCISTA ▲':'BAJISTA ▼')+' · '+tf+' · '+S.asset+' · de '+fp(ps)+' a '+fp(pe)};
+      var g={id:'zz'+Date.now()+tf,t:Date.now(),a:S.asset,dir:-l.dir,zz:true,tf:tf,
+        text:'NUEVA LÍNEA ZIGZAG '+(l.dir<0?'ALCISTA ▲':'BAJISTA ▼')+' · '+tf+' · '+S.asset+' · de '+fp(ps)+' a '+fp(pe)};
       res.ev={t:g.t,dir:g.dir};
       deliver(g,false);
     }
