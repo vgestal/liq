@@ -147,7 +147,7 @@ details summary{cursor:pointer;color:#9fb0c8}
     <label><input type="checkbox" id="ccandles" checked> Velas</label>
     <label><input type="checkbox" id="cdots" checked> Liquidaciones reales en el gráfico</label>
     <label><input type="checkbox" id="tipon" checked> Cuadro de info al pasar el ratón</label>
-    <label><input type="checkbox" id="accon" checked> Acumulado hasta el cursor</label>
+    <label><input type="checkbox" id="accon" checked> Acumulado hasta el cursor (liq., libro, flujo)</label>
   </div>
 </header>
 <main>
@@ -995,6 +995,11 @@ function drawAcc(ctx,G,VW,m,pm,y,r){
     ly+=m.sl[q*NC1+n];ls+=m.ss[q*NC1+n];vt+=m.vp[q];vb+=m.vpB[q];
     if(rr){bb+=rr.rb[q];ba+=rr.ra[q];}
   }
+  var fl=cur(),plo=Math.min(price,pm),phi=Math.max(price,pm),fb=0,fs=0,gb=0,gs=0,gnb=0,gns=0,i2,now=Date.now(),T=bigT(fl);
+  for(i2=0;i2<fl.bk.length;i2++){var xb=fl.bk[i2];if(xb.px>=plo&&xb.px<=phi){fb+=xb.b;fs+=xb.s;}}
+  for(i2=0;i2<fl.big.length;i2++){var eb=fl.big[i2];if(eb.usd<T||eb.p<plo||eb.p>phi)continue;if(eb.side==='B'){gb+=eb.usd;gnb++;}else{gs+=eb.usd;gns++;}}
+  var w5=flowWin(fl,300000),t5=w5.b+w5.s,d5=t5>0?(w5.b-w5.s)/t5:0,dz=fb-fs;
+  var fmS=function(v){return (v>=0?'+':'−')+fm(Math.abs(v));};
   var yP=G.padT+(VW.p1-price)/(VW.p1-VW.p0)*G.plotH,yA=clamp(yP,G.padT,G.padT+G.plotH),yB=y;
   var up=pm>=price,col=up?'239,83,80':'38,194,129';
   ctx.fillStyle='rgba('+col+',0.10)';ctx.fillRect(0,Math.min(yA,yB),G.plotW,Math.abs(yB-yA));
@@ -1006,7 +1011,13 @@ function drawAcc(ctx,G,VW,m,pm,y,r){
     ['   largos',fm(ly),'#ef5350'],
     ['   cortos',fm(ls),'#26c281'],
     ['Libro · bids / asks',fm(bb)+' / '+fm(ba),'#e6edf7'],
-    ['Volumen',fm(vt)+(vt>0?'  ('+Math.round(vb/vt*100)+'% compras)':''),'#e6edf7']
+    ['Volumen',fm(vt)+(vt>0?'  ('+Math.round(vb/vt*100)+'% compras)':''),'#e6edf7'],
+    ['Flujo zona · compras',fm(fb),'#26c281'],
+    ['Flujo zona · ventas',fm(fs),'#ef5350'],
+    ['   delta zona',(fb+fs>=1000)?fmS(dz):'—',dz>=0?'#26c281':'#ef5350'],
+    ['Grandes · compras',gnb?fm(gb)+' ('+gnb+')':'—','#26c281'],
+    ['Grandes · ventas',gns?fm(gs)+' ('+gns+')':'—','#ef5350'],
+    ['Flujo 5 min · delta',t5>=20000?(d5>=0?'+':'')+Math.round(d5*100)+'%  ('+fm(w5.b)+' / '+fm(w5.s)+')':'—',t5>=20000?(d5>=0?'#26c281':'#ef5350'):'#9aa7bb']
   ];
   return {lines:lines,col:col};
 }
@@ -1018,7 +1029,7 @@ function accHTML(A){
 function drawAccBox(ctx,G,A,x,y){
   var lines=A.lines,col=A.col;
   ctx.font='11px -apple-system,Helvetica,Arial,sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';
-  var bw=Math.min(G.plotW-16,290),lh=16,bh=lines.length*lh+10,bx=(x<G.plotW/2)?G.plotW-bw-8:8,by=clamp(y-bh/2,G.padT+4,G.padT+G.plotH-bh-4);
+  var bw=Math.min(G.plotW-16,330),lh=16,bh=lines.length*lh+10,bx=(x<G.plotW/2)?G.plotW-bw-8:8,by=clamp(y-bh/2,G.padT+4,G.padT+G.plotH-bh-4);
   if(bw<150)return;
   ctx.fillStyle='rgba(11,14,20,0.88)';ctx.fillRect(bx,by,bw,bh);
   ctx.strokeStyle='rgba('+col+',0.7)';ctx.lineWidth=1;ctx.strokeRect(bx+0.5,by+0.5,bw-1,bh-1);
