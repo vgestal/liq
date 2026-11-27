@@ -77,6 +77,21 @@ aside{width:330px;flex:none;display:flex;flex-direction:column;gap:12px}
 .ev.big{background:rgba(255,255,255,.05);font-weight:600}
 .ev i{font-style:normal;color:var(--mut);font-size:10px}
 details summary{cursor:pointer;color:#9fb0c8}
+.guide h4{margin:14px 0 4px;color:#cfe0ff;font-size:13px}
+.guide p,.guide li{line-height:1.55}
+.guide ul,.guide ol{padding-left:18px;margin:4px 0}
+.guide li{margin:3px 0}
+.guide .gnote{border-left:3px solid #3a5a9a;padding-left:8px;margin:8px 0}
+#guidebar{margin-top:8px}
+#guidebtn{width:100%;padding:9px 12px;font-size:13px;text-align:left}
+#guidemodal{position:fixed;inset:0;z-index:100;background:rgba(3,6,12,0.78);display:flex;align-items:center;justify-content:center;padding:2vh 2vw}
+#guidemodal .gbox{background:#0f141d;border:1px solid #2a354a;border-radius:10px;width:min(980px,96vw);height:min(94vh,1200px);display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+#guidemodal .ghead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #2a354a;font-size:15px;color:#e6edf7;flex:0 0 auto}
+#guidemodal .gbody{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 22px 28px;font-size:14px;color:#c4cfdf;line-height:1.6}
+#guidemodal .gbody h4{font-size:16px;margin:22px 0 6px;color:#dbe7ff;border-bottom:1px solid #222c3f;padding-bottom:4px}
+#guidemodal .gbody p,#guidemodal .gbody li{line-height:1.6}
+#guidemodal .gbody ul,#guidemodal .gbody ol{padding-left:22px}
+body.gopen{overflow:hidden}
 .fl{display:grid;grid-template-columns:46px 1fr 104px;align-items:center;gap:8px;margin:5px 0}
 .fl>span{color:#b8c4d8}
 .fl em{font-style:normal;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -169,6 +184,7 @@ details summary{cursor:pointer;color:#9fb0c8}
     <div class="cwrap" id="macdwrap" style="display:none"><canvas id="macdcv"></canvas><div id="macdtb"><button id="mxo" title="Reducir el eje X (también mueve el gráfico principal)">X−</button><button id="mxi" title="Ampliar el eje X (también el gráfico principal)">X+</button><button id="myo" title="Reducir el eje Y del MACD">Y−</button><button id="myi" title="Ampliar el eje Y del MACD">Y+</button><button id="mauto" title="Eje Y automático (también doble clic)">Auto</button><button id="mho" title="Panel más bajo">↕−</button><button id="mhi" title="Panel más alto">↕+</button></div></div>
     <div id="zzbox" style="display:none"></div>
     <div class="legend" id="legend"></div>
+    <div id="guidebar"><button id="guidebtn" type="button">📖 Guía completa: cómo leer e interpretar el mapa</button></div>
   </section>
   <aside>
     <div class="card" id="bias">
@@ -283,6 +299,113 @@ details summary{cursor:pointer;color:#9fb0c8}
     </div>
   </aside>
 </main>
+<div id="guidemodal" role="dialog" aria-modal="true" aria-label="Guía completa" style="display:none">
+  <div class="gbox">
+    <div class="ghead"><b>📖 Guía completa: cómo leer e interpretar el mapa</b><button id="guideclose" type="button" aria-label="Cerrar">✕ Cerrar</button></div>
+    <div class="gbody guide">
+      <p class="gnote">Todo lo que ves es un <b>modelo con datos públicos</b>, no datos exactos de ningún exchange. Sirve para tener contexto y ordenar ideas; no predice el precio ni es consejo financiero. Ninguna señal de esta página tiene backtest.</p>
+
+      <h4>0. Rutina de lectura en 5 pasos</h4>
+      <ol>
+        <li><b>Contexto (4h/1h):</b> mira dónde hay bandas gruesas de liquidación cerca del precio y si el sesgo es alcista, bajista o neutral.</li>
+        <li><b>Estructura:</b> mira el MSB (mercado alcista o bajista), las zonas OB/BB/MB y la tabla zigzag + MACD por temporalidad.</li>
+        <li><b>Momentum:</b> mira el CM MACD y el UT Bot de la temporalidad en la que operas.</li>
+        <li><b>Flujo en directo:</b> confirma con el flujo de órdenes (1/5/15 min), las órdenes grandes y el CVD.</li>
+        <li><b>Plan:</b> define entrada, TP y SL (la señal propone unos; ajústalos con zonas e indicadores) y decide si el riesgo compensa. Si los elementos se contradicen, no hay operación.</li>
+      </ol>
+
+      <h4>1. El mapa de calor</h4>
+      <ul>
+        <li><b>Ejes:</b> horizontal = tiempo (una columna por vela), vertical = precio. El color de cada punto es el <b>importe estimado de posiciones que se liquidarían</b> en ese precio, y se dibuja desde la vela en que se genera hasta que el precio lo cruza (ahí se «consume» y desaparece).</li>
+        <li><b>Cuadritos:</b> en el estilo Trading Different cada cuadrito agrupa varias celdas; el color y el brillo indican cuánto dinero hay. Cuadritos más brillantes (amarillos con la paleta por defecto) = concentraciones grandes; azules/oscuros = poco. Si haces zoom, los cuadritos se hacen más grandes y detallados. La casilla «Estilo Trading Different» vuelve al mapa continuo.</li>
+        <li><b>Largos y cortos:</b> los <b>largos</b> se liquidan cuando el precio <b>cae</b>, así que sus bandas están <b>por debajo</b> del precio; los <b>cortos</b> se liquidan cuando <b>sube</b>, por <b>encima</b>. Con «Largos/cortos por color» los distingues por color.</li>
+        <li><b>Apalancamiento (10x/25x/50x/100x):</b> cuanto más alto, más cerca del precio de entrada se liquida (aprox. 1/apalancamiento menos un margen de mantenimiento del 0,4%). Las bandas de 100x están pegadas al precio y se barren con movimientos pequeños; las de 10x están lejos y marcan objetivos más ambiciosos. Puedes activar o desactivar cada grupo.</li>
+        <li><b>Cómo usarlo:</b> las grandes concentraciones actúan como <b>imanes</b>: el precio tiende a ir a «barrerlas» (cazar stops y liquidar posiciones) y muchas veces revierte después. Una banda gruesa cercana es un posible objetivo de TP o una zona donde esperar un barrido antes de entrar contra él. Una banda que el precio ya cruzó deja de existir.</li>
+        <li><b>Capas:</b> <i>Liquidaciones</i> (estimadas), <i>Volumen órdenes</i> (volumen realmente operado por precio y vela; verde = dominan compradores, rojo = vendedores, brillo = volumen) y <i>Liquidez libro</i> (órdenes límite en el libro: verde bids, rojo asks; el histórico se acumula desde que abres la página).</li>
+        <li><b>Columnas de la derecha:</b> <i>Liq ahora</i> = liquidaciones estimadas por precio en este momento; <i>Vol periodo</i> = volumen operado por precio en el periodo cargado (verde/rojo según agresor); <i>Libro de órdenes</i> = liquidez actual en el libro por precio (verde bids = soporte potencial, rojo asks = resistencia potencial). Barras largas = más dinero. Ojo: una orden límite grande puede retirarse antes de ejecutarse (spoofing).</li>
+        <li><b>Puntos y burbujas:</b> los puntos son <b>liquidaciones reales</b> recibidas en directo (rojo = largo liquidado, verde = corto liquidado; tamaño = importe). Las burbujas de <b>órdenes grandes</b> son operaciones agresivas por encima del umbral (verde compra, rojo venta).</li>
+        <li><b>Cursor:</b> al pasar el ratón o tocar con el dedo ves el $M de cada capa en esa zona y el <b>acumulado desde el precio actual hasta el cursor</b> (liquidaciones largos/cortos, libro y volumen). Úsalo para medir cuánto «combustible» hay entre el precio y un objetivo.</li>
+        <li><b>Zoom:</b> rueda = tiempo; Mayús+rueda o arrastrar el eje de precios = zoom vertical; arrastrar = mover; doble clic o «Restablecer» = vista completa. Con «Auto Y» el eje de precios se reajusta a lo visible.</li>
+        <li><b>Temporalidad:</b> 4h y 1h muestran niveles más importantes y estables; 5m y 15m muestran detalle de corto plazo y más ruido. Conviene cruzar al menos dos.</li>
+      </ul>
+
+      <h4>2. El sesgo (panel «Sesgo»)</h4>
+      <p>Es una puntuación de −100 a +100 que resume tres componentes: <b>40% Imán + 30% Balance + 30% Flujo</b>. Etiquetas: ≥ +50 alcista fuerte, ≥ +20 alcista, entre −20 y +20 neutral, ≤ −20 bajista, ≤ −50 bajista fuerte. El marcador de la barra muestra dónde estás.</p>
+      <ul>
+        <li><b>Imán:</b> compara las liquidaciones estimadas <b>por encima</b> y <b>por debajo</b> del precio, dando más peso a las cercanas. Positivo = hay más combustible arriba (el precio tiende a ser atraído hacia arriba, típico squeeze de cortos). Negativo = más abajo.</li>
+        <li><b>Balance:</b> desequilibrio entre bids y asks del libro cerca del precio (hasta ±1,5%). Positivo = más compradores en espera (soporte). Es la componente más manipulable, porque las órdenes pueden retirarse.</li>
+        <li><b>Flujo:</b> mezcla la delta (compras − ventas) de las operaciones en directo de los últimos 5 min junto con la delta de las velas recientes, y las liquidaciones reales de los últimos 15 min (si se liquidan más cortos que largos, es presión compradora). Positivo = domina la compra agresiva.</li>
+        <li><b>Imán superior / inferior:</b> la mayor concentración de liquidaciones por encima y por debajo del precio, con su distancia en % y su importe. Son los objetivos naturales del barrido.</li>
+        <li><b>Cómo interpretarlo:</b> cuando las tres barras apuntan en la misma dirección el sesgo es más fiable. Si el imán apunta arriba pero el flujo es vendedor, el mercado está dividido: mejor esperar. Neutral significa «sin ventaja clara», no «va a quedarse quieto». Es un resumen de condiciones actuales, no una predicción, y cambia en segundos.</li>
+      </ul>
+
+      <h4>3. La señal de entrada</h4>
+      <ul>
+        <li><b>Qué mide:</b> solo el <b>flujo de órdenes en directo</b> del activo (no el mapa). Combina la delta de 1 min (22%), la de 5 min (28%), el sesgo de las órdenes grandes de los últimos 5 min (22%), la delta de 3 min solo si coincide con la dirección del precio (18%) y las liquidaciones reales de 15 min (10%). Resultado de −100 a +100.</li>
+        <li><b>Cuándo salta:</b> cuando la puntuación supera el umbral de la <b>sensibilidad</b> elegida (baja 60, media 45, alta 32), se mantiene unos segundos y ha pasado el <b>enfriamiento</b>. Hace falta un <b>calentamiento</b> de unos 2 minutos y 40 operaciones desde que abres la página (el panel muestra el porcentaje). Puedes limitarla a solo Long o solo Short.</li>
+        <li><b>Entrada, TP y SL:</b> la entrada es el último precio. El TP sale del imán de liquidaciones (modo automático) o de un rango fijo de 100 a 1800 puntos (1 punto = 1 $ en BTC; en otros activos se escala por el mismo porcentaje), y el SL del ratio R:R elegido. Si activas «Usar en TP/SL» en MSB-OB, UT Bot o CM MACD, cada indicador puede ajustar esos niveles (por ejemplo, SL tras una zona OB o stop del UT Bot).</li>
+        <li><b>Seguimiento y estadísticas:</b> cada señal queda «abierta» hasta tocar TP (acierto) o SL (fallo). Si en el mismo intervalo se tocan los dos, se cuenta el SL primero (criterio prudente). El contador Long/Short muestra aciertos, fallos y porcentaje, por activo o en suma.</li>
+        <li><b>Cómo usarla bien:</b> trátala como un <b>aviso para mirar</b>, no como una orden. Antes de entrar comprueba que no choca con el sesgo, que hay zonas o liquidaciones que justifican el TP, que la confluencia de indicadores acompaña y que el riesgo/beneficio compensa. Con pocas señales el porcentaje de acierto no significa nada. Las señales del resto de activos vigilados usan un TP por defecto de 1000 puntos y R:R, sin mapa ni estructura propios.</li>
+        <li><b>Alarma:</b> el panel «Alarma y avisos» configura sonido, voz, notificación, vibración y repetición. En móvil y tablet el navegador necesita un toque inicial para permitir el sonido y la página debe quedarse abierta.</li>
+      </ul>
+
+      <h4>4. Los indicadores</h4>
+      <p><b>UT Bot Alerts (QuantNomad).</b> Dibuja un stop dinámico basado en el ATR (volatilidad). Si el precio está por encima del stop, la tendencia es alcista; por debajo, bajista. «Buy» o «Sell» aparece cuando el precio cruza el stop. El <i>valor clave</i> (a) agranda el stop: más alto = menos señales y más tardías; el <i>periodo ATR</i> (c) suaviza. Úsalo como filtro de tendencia y como referencia de stop. En mercados laterales da señales falsas seguidas.</p>
+      <p><b>MSB-OB (EmreKb).</b> Detecta la estructura del mercado con un zigzag de máximos y mínimos:</p>
+      <ul>
+        <li><b>MSB (Market Structure Break):</b> la línea con la etiqueta MSB marca una <b>ruptura de estructura</b>. Verde = el mercado pasa a alcista (rompió un máximo relevante), rojo = bajista. El estado actual del mercado se muestra en el panel.</li>
+        <li><b>OB (Order Block):</b> zona de la última vela contraria antes del movimiento que provocó la ruptura. <b>Bu-OB</b> (verde) es soporte potencial, <b>Be-OB</b> (rojo) resistencia potencial. Son candidatas a entrada, a SL (se coloca más allá de la zona) o a TP (la zona opuesta).</li>
+        <li><b>BB (Breaker Block) y MB (Mitigation Block):</b> variantes que aparecen cuando una zona falla o el precio la invalida; suelen invertir su función (un soporte roto pasa a ser resistencia). Si el precio rompe una zona, se marca como «rota» y deja de contar.</li>
+        <li><b>Zigzag:</b> las líneas que unen los pivotes (longitud del zigzag y factor Fib configurables). Si el MSB va contra tu operación, es una alerta de que la estructura ha cambiado.</li>
+        <li><b>Colores y grosor:</b> se configuran en el panel de indicadores.</li>
+      </ul>
+      <p><b>CM_Ult_MacD_MTF (ChrisMoody).</b> Es un MACD con cuatro elementos:</p>
+      <ul>
+        <li><b>Línea MACD</b> (coloreada según dirección) y <b>línea de señal</b> (amarilla). MACD por encima de la señal = momentum alcista; por debajo = bajista.</li>
+        <li><b>Punto de cruce:</b> <b>verde</b> cuando el MACD cruza por encima de la señal, <b>rojo</b> cuando cruza por debajo. El punto activo indica cuál fue el último cruce: verde = la amarilla está por debajo del MACD; rojo = por encima.</li>
+        <li><b>Histograma</b> (distancia MACD − señal): barra creciente en positivo = el impulso alcista gana fuerza; positiva pero decreciente = se agota; creciente en negativo = recupera; con 4 colores ves esas cuatro fases. Un cruce de la línea cero refuerza el cambio de tendencia.</li>
+        <li><b>MTF:</b> puede calcularse con otra temporalidad (por ejemplo 1h sobre un gráfico de 5m) para ver el momentum de fondo; «gráfico» usa la misma temporalidad. Con MTF la última barra usa la vela en formación de la temporalidad superior.</li>
+        <li>En el panel de indicadores, «Para la operación» indica, para long y para short, si el MACD está <i>a favor</i>, <i>a favor pero se agota</i>, <i>en contra</i> o <i>en contra pero recupera</i>. Puedes ampliar y mover el panel en X e Y.</li>
+      </ul>
+      <p><b>Confluencia.</b> Cuenta cuántos de los indicadores activos (MSB, UT Bot, MACD) apuntan a cada dirección: <b>▲ 3/3</b> = los tres a favor del largo. Más coincidencia = más calidad, pero cuando todo coincide el movimiento a veces ya está avanzado.</p>
+      <p><b>Tabla de zigzag por temporalidad (5m, 15m, 1h, 2h, 4h).</b> Columna <i>Zigzag</i>: <b>Bajista</b> si la última línea termina arriba (en un máximo) y <b>Alcista</b> si termina abajo (en un mínimo). Columna <i>CM MACD MTF</i>: punto verde (MACD sobre la señal) o rojo, y cuántas velas hace del cruce. <i>Conjunto</i>: <b>ALCISTA</b> o <b>BAJISTA</b> cuando ambos coinciden y <b>Mixta</b> cuando no. Úsala como mapa rápido de alineación entre temporalidades: si 1h, 2h y 4h coinciden y 5m/15m van en contra, suele ser un retroceso, no un cambio de tendencia. La alarma de zigzag suena cada vez que aparece una línea nueva en cualquier temporalidad activada y nombra la temporalidad.</p>
+
+      <h4>5. El flujo de órdenes y sus temporalidades</h4>
+      <ul>
+        <li><b>Qué es:</b> cada operación se clasifica por el lado del <b>agresor</b> (el que cruza el spread): compra agresiva o venta agresiva. <b>Delta = compras − ventas</b>. Los datos son de Binance, Bybit y OKX en directo y se acumulan <b>desde que abres la página</b>; no hay histórico previo.</li>
+        <li><b>1 min:</b> impulso inmediato. Muy reactivo y ruidoso; útil para el momento exacto de la entrada.</li>
+        <li><b>5 min:</b> la lectura de referencia (la señal la pondera más). Dice quién manda ahora.</li>
+        <li><b>15 min:</b> contexto del flujo. Si 1 y 5 min son compradores pero 15 min es vendedor, es probablemente un rebote dentro de una presión vendedora.</li>
+        <li><b>Barra y Δ:</b> la barra reparte compras (verde) y ventas (rojo) de la ventana; Δ es la diferencia en dólares. <b>Alineación</b> (las tres ventanas con el mismo signo) = flujo consistente. <b>Divergencia</b> entre ventanas = posible giro o falta de convicción.</li>
+        <li><b>Δ 5 min por bolsa (BN/BY/OK):</b> si las tres coinciden, el movimiento es más fiable; si solo una lidera, puede ser un único actor o arbitraje.</li>
+        <li><b>Órdenes grandes:</b> operaciones por encima del umbral (automático = percentil alto de lo observado, con mínimo de 2.000 $; o fijo). Cuenta compras y ventas grandes de 5 min y las muestra como burbujas y en la cinta. Muchas compras grandes agresivas = intención o prisa por entrar; si el precio no sube a pesar de ellas, probablemente hay <b>absorción</b> (una orden límite grande las está frenando).</li>
+        <li><b>En el gráfico, por temporalidad:</b> la capa «Volumen órdenes» usa el volumen de las velas de la temporalidad elegida (compra/venta del agresor cuando el exchange lo informa; si no, se estima por el color de la vela). En 4h/1h los niveles de volumen son más duraderos y significativos; en 5m/15m reflejan actividad de corto plazo. El sesgo usa la delta de las velas de aproximadamente la última hora.</li>
+        <li><b>Calentamiento:</b> durante los primeros minutos las ventanas de 5 y 15 min están incompletas; no saques conclusiones todavía.</li>
+      </ul>
+
+      <h4>6. La gráfica CVD</h4>
+      <p><b>CVD</b> (Cumulative Volume Delta) es la suma acumulada de la delta: sube con cada compra agresiva y baja con cada venta agresiva. En el panel, la línea <b>verde/roja es el CVD</b> y la <b>gris es el precio</b>, con una ventana de hasta 15 minutos que empieza en cero al abrir la página. Lo importante es la <b>forma y la pendiente</b>, no el valor absoluto.</p>
+      <ul>
+        <li><b>Precio y CVD suben juntos:</b> el avance está respaldado por compras agresivas; confirma la tendencia.</li>
+        <li><b>Precio sube pero el CVD baja o se aplana (divergencia bajista):</b> sube con poca compra agresiva o hay vendedores que absorben con órdenes límite. Riesgo de agotamiento.</li>
+        <li><b>Precio baja pero el CVD sube (divergencia alcista):</b> los vendedores agresivos no consiguen bajarlo porque los compradores absorben. Posible suelo o rebote.</li>
+        <li><b>Precio y CVD bajan juntos:</b> presión vendedora real; confirma la caída.</li>
+        <li><b>Precio lateral con CVD en una dirección:</b> se está acumulando o distribuyendo posición; suele resolverse con una ruptura hacia el lado del CVD, pero no siempre.</li>
+        <li><b>Pendiente:</b> un CVD casi vertical indica mucha agresividad (a menudo un barrido de liquidaciones); un cambio brusco de pendiente marca un posible agotamiento.</li>
+        <li><b>Límites:</b> solo ve las operaciones ejecutadas (no las órdenes límite pendientes), solo de tres bolsas y desde que abriste la página. «Agresor» no significa «institucional». Combínalo con el mapa: una divergencia justo en una banda de liquidación gruesa es mucho más relevante que una en medio de la nada.</li>
+      </ul>
+
+      <h4>7. Errores frecuentes</h4>
+      <ul>
+        <li>Tratar las bandas de liquidación como datos exactos: son una estimación a partir del interés abierto y el volumen.</li>
+        <li>Operar solo por la señal sin mirar sesgo, estructura y liquidez cercana.</li>
+        <li>Fiarse del flujo en los primeros minutos o del libro cuando hay muy poca liquidez.</li>
+        <li>Ignorar la temporalidad superior: una señal alcista de 5m contra un 4h bajista tiene menos recorrido.</li>
+        <li>Olvidar que los resultados pasados de las estadísticas de señales no garantizan resultados futuros.</li>
+      </ul>
+      </div>
+  </div>
+</div>
 <script>
 (function(){
 'use strict';
@@ -2559,6 +2682,12 @@ $('myo').onclick=function(){mcZoomY(1/1.5,mcMid());};
 $('mauto').onclick=mcAuto;
 $('mhi').onclick=function(){CFG.mcH=Math.min(700,CFG.mcH+60);cfgSave();mcRedraw();};
 $('mho').onclick=function(){CFG.mcH=Math.max(110,CFG.mcH-60);cfgSave();mcRedraw();};
+var gm=$('guidemodal');
+function guideOpen(){gm.style.display='flex';document.body.classList.add('gopen');gm.querySelector('.gbody').scrollTop=0;}
+function guideClose(){gm.style.display='none';document.body.classList.remove('gopen');}
+$('guidebtn').onclick=guideOpen;$('guideclose').onclick=guideClose;
+gm.addEventListener('click',function(e){if(e.target===gm)guideClose();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&gm.style.display!=='none')guideClose();});
 $('za_test').onclick=function(){audioInit();zzTest();};
 $('st_rst').onclick=function(){CFG.colBull='#26c281';CFG.colBear='#ef5350';CFG.colZz='#e1e8f5';CFG.msbW=2;CFG.boxW=1.2;CFG.zzW=1;cfgSave();syncAlUI();S.stKey='';requestRender();};
 if(window.ResizeObserver)new ResizeObserver(function(){mcRedraw();}).observe($('macdwrap'));
