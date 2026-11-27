@@ -634,7 +634,7 @@ function bookRows(sn,m){
 var off=document.createElement('canvas'),octx=off.getContext('2d');
 var offB=document.createElement('canvas'),bctx=offB.getContext('2d');
 function geom(W,H){
-  var td=!!CFG.tdOn,axisW=62,sw=56,gap=3,bsw=88,padT=20,padB=22,stripsW=td?(sw+bsw+2*gap):(3*sw+3*gap);
+  var td=!!CFG.tdOn,axisW=62,sw=56,gap=3,bsw=88,padT=20,padB=22,stripsW=td?(2*sw+bsw+3*gap):(3*sw+3*gap);
   var plotW=W-axisW-stripsW-4,extW=Math.max(36,plotW*0.07),candW=plotW-extW;
   return {td:td,bsw:bsw,W:W,H:H,axisW:axisW,sw:sw,gap:gap,padT:padT,padB:padB,plotW:plotW,extW:extW,candW:candW,plotH:H-padT-padB,stripX:plotW+4,axisX:plotW+4+stripsW};
 }
@@ -794,7 +794,6 @@ function render(){
     else if(c1>c0)ctx.drawImage(img,c0,rc.sy,c1-c0,rc.sh,xT(m.t0+c0*tfMs),rc.dy,(c1-c0)*cw,rc.dh);
     if(S.layer==='liq'&&!G.td)ctx.drawImage(img,n,rc.sy,1,rc.sh,G.candW,rc.dy,G.extW,rc.dh);
   }
-  if(G.td)drawVolLines(ctx,G,m,VW,yP);
   ctx.restore();
   /* rejilla y eje de precio */
   ctx.font='11px -apple-system,Helvetica';ctx.textBaseline='middle';
@@ -945,33 +944,17 @@ function drawSquares(ctx,G,m,VW,img,c0,c1,xT,yP,cw){
     }
   }
 }
-function drawVolLines(ctx,G,m,VW,yP){
-  var R=m.R,r,my=0,hRow=Math.abs(yP(m.pmin+m.step)-yP(m.pmin));
-  var r0=Math.max(0,Math.floor((VW.p0-m.pmin)/m.step)),r1=Math.min(R-1,Math.ceil((VW.p1-m.pmin)/m.step));
-  for(r=r0;r<=r1;r++)if(m.vp[r]>my)my=m.vp[r];
-  if(!(my>0))return;
-  ctx.lineCap='butt';
-  for(r=r0;r<=r1;r++){
-    var v=m.vp[r];if(!(v>0))continue;
-    var t=Math.pow(v/my,0.75),yc=yP(m.pmin+(r+0.5)*m.step),L=t*G.plotW*0.34+4;
-    var th=Math.max(1,Math.min(hRow*0.95,1+t*Math.max(1.5,hRow*0.95)));
-    var col=volRGB(m.vpB[r]/v);
-    ctx.strokeStyle='rgba('+(col[0]|0)+','+(col[1]|0)+','+(col[2]|0)+','+(0.35+0.55*t).toFixed(2)+')';
-    ctx.lineWidth=th;ctx.beginPath();ctx.moveTo(G.plotW,yc);ctx.lineTo(G.plotW-L,yc);ctx.stroke();
-  }
-  ctx.lineWidth=1;
-}
 function drawStripsTD(ctx,G,m,VW){
   var R=m.R,n=m.n,NC1=m.NC1,r;
   var yP=function(p){return G.padT+G.plotH*(1-(p-VW.p0)/(VW.p1-VW.p0));};
   ctx.fillStyle='#7d8aa0';ctx.font='10px -apple-system,Helvetica';ctx.textAlign='left';ctx.textBaseline='alphabetic';
-  var xL=G.stripX,xB=G.stripX+G.sw+G.gap;
-  ctx.fillText('Liq ahora',xL+2,G.padT-6);ctx.fillText('Libro de órdenes',xB+2,G.padT-6);
-  ctx.fillStyle='rgba(255,255,255,0.025)';ctx.fillRect(xL,G.padT,G.sw,G.plotH);ctx.fillRect(xB,G.padT,G.bsw,G.plotH);
-  var bk=S.book?bookRows(S.book,m):null,mx=0,mb=0;
+  var xL=G.stripX,xV=G.stripX+G.sw+G.gap,xB=xV+G.sw+G.gap;
+  ctx.fillText('Liq ahora',xL+2,G.padT-6);ctx.fillText('Vol periodo',xV+2,G.padT-6);ctx.fillText('Libro de órdenes',xB+2,G.padT-6);
+  ctx.fillStyle='rgba(255,255,255,0.025)';ctx.fillRect(xL,G.padT,G.sw,G.plotH);ctx.fillRect(xV,G.padT,G.sw,G.plotH);ctx.fillRect(xB,G.padT,G.bsw,G.plotH);
+  var bk=S.book?bookRows(S.book,m):null,mx=0,mb=0,my=0;
   for(r=0;r<R;r++){
     var pb=m.pmin+r*m.step;if(pb>VW.p1||pb+m.step<VW.p0)continue;
-    var t0=m.sl[r*NC1+n]+m.ss[r*NC1+n];if(t0>mx)mx=t0;
+    var t0=m.sl[r*NC1+n]+m.ss[r*NC1+n];if(t0>mx)mx=t0;if(m.vp[r]>my)my=m.vp[r];
     if(bk){var bb=Math.max(bk.rb[r],bk.ra[r]);if(bb>mb)mb=bb;}
   }
   var top=G.padT,bot=G.padT+G.plotH;
@@ -984,6 +967,11 @@ function drawStripsTD(ctx,G,m,VW){
       var t1=Math.pow(tot/mx,0.6);
       ctx.fillStyle=palStr(S.split?(lv>=ls?PAL_L:PAL_S):PAL_V,t1);
       ctx.fillRect(xL,y,t1*(G.sw-3),h+0.6);
+    }
+    if(my>0&&m.vp[r]>0){
+      var t2=Math.pow(m.vp[r]/my,0.6),cv2=volRGB(m.vpB[r]/m.vp[r]);
+      ctx.fillStyle='rgb('+(cv2[0]|0)+','+(cv2[1]|0)+','+(cv2[2]|0)+')';
+      ctx.fillRect(xV,y,t2*(G.sw-3),h+0.6);
     }
     if(bk&&mb>0){
       var b=bk.rb[r],a=bk.ra[r],vv=Math.max(b,a);
